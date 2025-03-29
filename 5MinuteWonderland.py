@@ -3,7 +3,10 @@ import socket
 import multiprocessing
 import numpy as np
 import ipaddress
+import os
 
+hostname = socket.gethostname()
+ip = socket.gethostbyname(hostname)
 UDP_ListenPort = 6969
 UDP_SendPort = 8794
 network = ipaddress.ip_network
@@ -28,4 +31,8 @@ if __name__=="__main__":
     while response.upper() != "HOST" and response.upper() != "JOIN":
         response = input("Invalid response: Type \"Host\" to host or \"Join\" to join ")
         print(network)
+    devices = []
+    for device in os.popen('arp -a'): devices.append(device)
+    print(devices)
+    print(ip)
     exit
