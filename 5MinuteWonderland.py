@@ -1,41 +1,80 @@
-import sys
 import socket
 import multiprocessing
 import numpy as np
 import scapy.config
 import scapy.all
 import atexit
+import math
+import nmap
+import threading
 
 hostname = socket.gethostname()
 ip = socket.gethostbyname(hostname)
-UDP_ListenPort = 6969
+UDP_ListenPort1 = 7001
+UDP_ListenPort2 = 7002
+UDP_ListenPort3 = 7003
 UDP_SendPort = 8794
+
+
+# Host devices will have an open port
 
 # Scan for Devices
 def NetworkSearch():
     return
-def scan_and_print_neighbors(net, interface, timeout=5):
-    logger.info("arping %s on %s" % (net, interface))
-    try:
-        ans, unans = scapy.layers.l2.arping(net, iface=interface, timeout=timeout, verbose=True)
-        for s, r in ans.res:
-            line = r.sprintf("%Ether.src%  %ARP.psrc%")
-            try:
-                hostname = socket.gethostbyaddr(r.psrc)
-                line += " " + hostname[0]
-            except socket.herror:
-                # failed to resolve
-                pass
-            logger.info(line)
-    except socket.error as e:
-        if e.errno == errno.EPERM:     # Operation not permitted
-            logger.error("%s. Did you run as root?", e.strerror)
-        else:
-            raise
+
+def HandleClient(conn, addr):
+    return
+
 # Host Game
+# MESSY With errors (inported from another project)
+def PortListener(PortNumber):
+    socklstn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    socklstn.bind(('localhost', PortNumber))
+    socklstn.listen(5)
+    while True:
+        try:
+            conn, addr = socklstn.accept()
+            thread = threading.Thread(target=HandleClient, args=(conn, addr))
+            thread.start()
+        
+        
+            message = conn.recv(1024).decode('utf-8')
+            if not message:
+                break
+            print(f"Received command from {addr}: {message}")  # Debugging output
+            process_message(conn, addr, message)  # Passing addr here
+        except Exception as e:
+            print(f"Error with client {addr}: {e}")
+            break
+    socklstn.close()
+    return
+
 
 # Find Host
 def FindHost():
+    network = '10.0.0.0/8'
+    scanner = nmap.PortScanner
+    while True:
+        scanner.scan(network, '7001-7003')
+        for host in scanner.all_hosts():
+            print(host)
+        print("Type \"Refresh\" to refrsh")
+        print("Type \"Cancel\" to cancel")
+        print("Type the IP address to join that host")
+        ip = input("Input: ")
+        if input.upper() == "CANCEL":
+            exit
+        if input.upper() == "REFRESH":
+            scanner.scan(network, '7001-7003')
+            for host in scanner.all_hosts():
+                print(host)
+        else:
+            try:    
+                udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                udp_socket.bind(('localhost', 0))  # Bind to an available port
+            except:
+                return
+            break
     return
 # Send packets
 def SendPackets():
@@ -46,6 +85,8 @@ def SendPackets():
 def exit_handler():
     print('My application is ending!')
 atexit.register(exit_handler)
+
+
 # main method
 if __name__=="__main__":
     response = input("Would You like to host or join a game?: ")
@@ -61,6 +102,10 @@ if __name__=="__main__":
 
         if netmask <= 0 or netmask == 0xFFFFFFFF:
             continue
-    
+        
+        #net = to_CIDR_notation(network, netmask)
+        #if net:
+        #    print(net)
+            #scan_and_print_neighbors(net, interface)
     exit
     
